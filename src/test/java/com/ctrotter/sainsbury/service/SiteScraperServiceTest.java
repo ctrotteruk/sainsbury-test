@@ -89,6 +89,7 @@ public class SiteScraperServiceTest {
 		when(nutritionElement.hasText()).thenReturn(Boolean.TRUE);
 		when(nutritionElement.text()).thenReturn(TEST_CALORIES);
 		when(nutritionElement.getElementsByClass(PRODUCT_TEXT_CLASS_ID)).thenReturn(priceElements);
+		when(element.select("TD:contains(kcal)")).thenReturn(nutritionElements);
 		when(jSoupClient.scrapeSiteForSpecifiedElementsClass(anyString(), anyString())).thenReturn(elements);
 		// Excecute
 		ScrapedData scrapedData = siteScraperService.scrapeScrape("VALID_URL");
@@ -127,6 +128,7 @@ public class SiteScraperServiceTest {
 		when(nutritionElement.hasText()).thenReturn(Boolean.FALSE);
 		when(nutritionElement.text()).thenReturn(TEST_CALORIES);
 		when(nutritionElement.getElementsByClass(PRODUCT_TEXT_CLASS_ID)).thenReturn(priceElements);
+		when(element.select("TD:contains(kcal)")).thenReturn(nutritionElements);
 		when(jSoupClient.scrapeSiteForSpecifiedElementsClass(anyString(), anyString())).thenReturn(elements);
 		// Excecute
 		ScrapedData scrapedData = siteScraperService.scrapeScrape("VALID_URL");
@@ -165,6 +167,8 @@ public class SiteScraperServiceTest {
 		when(nutritionElement.hasText()).thenReturn(Boolean.FALSE);
 		when(nutritionElement.text()).thenReturn(TEST_CALORIES);
 		when(nutritionElement.getElementsByClass(PRODUCT_TEXT_CLASS_ID)).thenReturn(priceElements);
+		when(element.select("TD:contains(kcal)")).thenReturn(nutritionElements);
+		
 		when(jSoupClient.scrapeSiteForSpecifiedElementsClass(anyString(), anyString())).thenReturn(elements);
 		// Excecute
 		ScrapedData scrapedData = siteScraperService.scrapeScrape("VALID_URL");

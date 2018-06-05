@@ -13,6 +13,7 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import com.ctrotter.sainsbury.model.vo.Result;
 import com.ctrotter.sainsbury.model.vo.ScrapedData;
@@ -26,10 +27,13 @@ import com.ctrotter.sainsbury.service.client.JSoupClient;
 @Service
 /**
  * Service to extract data from supplied test url
+ * 
  * @author Ctrotter
  *
  */
 public class SiteScraperService {
+
+	private static final String TD_CONTAINS_KCAL = "TD:contains(kcal)";
 
 	private static final int TWO_DECIMAL_PLACES = 2;
 
@@ -70,6 +74,7 @@ public class SiteScraperService {
 
 	/**
 	 * Scrape the supplied url looking for specified elements.
+	 * 
 	 * @param siteToScrape
 	 * @return {@link ScrapedData} object populated with supplied data.
 	 * @throws IOException
@@ -85,7 +90,9 @@ public class SiteScraperService {
 
 	/**
 	 * Calculate Total and Vat for supplied set of results.
-	 * @param results - List of scraped results.
+	 * 
+	 * @param results
+	 *            - List of scraped results.
 	 * @return Total - representing totalled values
 	 */
 	private Total calculateTotalsAndVAT(List<Result> results) {
@@ -96,7 +103,8 @@ public class SiteScraperService {
 				totalCost = totalCost.add(result.getUnitPrice());
 			}
 			total.setGross(totalCost);
-			BigDecimal vat = totalCost.multiply(new BigDecimal(TWENTY_PERCENT)).setScale(TWO_DECIMAL_PLACES, RoundingMode.DOWN);
+			BigDecimal vat = totalCost.multiply(new BigDecimal(TWENTY_PERCENT)).setScale(TWO_DECIMAL_PLACES,
+					RoundingMode.DOWN);
 			total.setVat(vat);
 		}
 		return total;
@@ -104,10 +112,13 @@ public class SiteScraperService {
 
 	/**
 	 * Transform the supplied list of elements into list of List of REsult Elemets
+	 * 
 	 * @param elements
-	 * @return List<Result> of transformed elements 
-	 * @throws IOException thrown supplied url is invalid, or cannot be accessed.
-	 * @throws MalformedLinkException is supplied  
+	 * @return List<Result> of transformed elements
+	 * @throws IOException
+	 *             thrown supplied url is invalid, or cannot be accessed.
+	 * @throws MalformedLinkException
+	 *             is supplied
 	 */
 	private List<Result> transformElement(Elements elements) throws IOException, MalformedLinkException {
 		List<Result> resultList = new ArrayList<>();
@@ -122,7 +133,8 @@ public class SiteScraperService {
 			Element productNameAndPromotionTag = hrefElement.first();
 			result.setTitle(extractElementText(productNameAndPromotionTag));
 			Element unitPriceClassElement = extractFirstElement(element, PRICE_PER_UNIT_CLASS_ID);
-			result.setUnitPrice(new BigDecimal(unitPriceClassElement.text().replace(PER_UNIT, EMPTY_STRING).replaceAll(POUND_SYMBOL, EMPTY_STRING)));
+			result.setUnitPrice(new BigDecimal(unitPriceClassElement.text().replace(PER_UNIT, EMPTY_STRING)
+					.replaceAll(POUND_SYMBOL, EMPTY_STRING)));
 
 			processSecendPage(result, productNameAndPromotionTag);
 			resultList.add(result);
@@ -133,19 +145,26 @@ public class SiteScraperService {
 
 	/**
 	 * Extract href link and extract the required data.
-	 * @param result - result object to be populated with additional data. 
-	 * @param productNameAndPromotionTag - Tag containing the href link. 
-	 * @throws IOException  if url cannot be read.
+	 * 
+	 * @param result
+	 *            - result object to be populated with additional data.
+	 * @param productNameAndPromotionTag
+	 *            - Tag containing the href link.
+	 * @throws IOException
+	 *             if url cannot be read.
 	 */
 	private void processSecendPage(Result result, Element productNameAndPromotionTag) throws IOException {
 		Elements nutitionTable = jSoupClient.scrapeSiteForSpecifiedElementsClass(
 				productNameAndPromotionTag.attr(HREF_TAG).replace(INVALID_PATH_URL, VALID_PATH_URL),
 				MAIN_PRODUCT_INFO_CLASS_ID);
 		Element nutritionRow = nutitionTable.first();
-		Element nutrition = nutritionRow.getElementsByClass(NUTRITION_LEVEL_CLASSS_ID).first();
-		if (null != nutrition && nutrition.hasText()) {
-			result.setKcalPer100g(Integer.parseInt(nutrition.text().replace(KCAL, EMPTY_STRING)));
-		}
+
+		if (null != nutritionRow.select(TD_CONTAINS_KCAL).first()
+				&& nutritionRow.select(TD_CONTAINS_KCAL).first().hasText()) {
+			result.setKcalPer100g(
+					Integer.parseInt(nutritionRow.select(TD_CONTAINS_KCAL).first().text().replace(KCAL, EMPTY_STRING)));
+		} 
+
 
 		Elements productTexts = nutritionRow.getElementsByClass(PRODUCT_TEXT_CLASS_ID);
 		result.setDescription(extractElementsText(productTexts, PARAGRAPH));
@@ -153,10 +172,14 @@ public class SiteScraperService {
 
 	/**
 	 * Find elements by supplied classid and extract the first element.
-	 * @param element to be  searched upon. 
-	 * @param classId - to be searched for 
+	 * 
+	 * @param element
+	 *            to be searched upon.
+	 * @param classId
+	 *            - to be searched for
 	 * @return First element of found elements.
-	 * @throws MalformedLinkException - throw if elements cannot be found.
+	 * @throws MalformedLinkException
+	 *             - throw if elements cannot be found.
 	 */
 	private Element extractFirstElement(Element element, String classId) throws MalformedLinkException {
 		Elements elements = element.getElementsByClass(classId);
@@ -167,7 +190,8 @@ public class SiteScraperService {
 	}
 
 	/**
-	 * From the supplied list elements extract text. 
+	 * From the supplied list elements extract text.
+	 * 
 	 * @param elements
 	 * @param elementToSelect
 	 * @return
@@ -178,14 +202,16 @@ public class SiteScraperService {
 			Element element = elements.first();
 			Elements selectedElements = element.select(elementToSelect);
 			result.append(selectedElements.first().text());
-					}
+		}
 		return result.toString();
 	}
 
 	/**
-	 * Extract text section from the supplied element. 
-	 * @param element - with text to be extracted. 
-	 * @return String  representing text if supplied. 
+	 * Extract text section from the supplied element.
+	 * 
+	 * @param element
+	 *            - with text to be extracted.
+	 * @return String representing text if supplied.
 	 */
 	private String extractElementText(Element element) {
 		if (element.hasText()) {
