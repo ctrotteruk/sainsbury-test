@@ -33,6 +33,8 @@ import com.ctrotter.sainsbury.service.client.JSoupClient;
  */
 public class SiteScraperService {
 
+	private static final String TH_CONTAINS_KCAL = "TH:contains(kcal)";
+
 	private static final String TD_CONTAINS_KCAL = "TD:contains(kcal)";
 
 	private static final int TWO_DECIMAL_PLACES = 2;
@@ -136,7 +138,7 @@ public class SiteScraperService {
 			result.setUnitPrice(new BigDecimal(unitPriceClassElement.text().replace(PER_UNIT, EMPTY_STRING)
 					.replaceAll(POUND_SYMBOL, EMPTY_STRING)));
 
-			processSecendPage(result, productNameAndPromotionTag);
+			processSecondPage(result, productNameAndPromotionTag);
 			resultList.add(result);
 		}
 
@@ -153,7 +155,7 @@ public class SiteScraperService {
 	 * @throws IOException
 	 *             if url cannot be read.
 	 */
-	private void processSecendPage(Result result, Element productNameAndPromotionTag) throws IOException {
+	private void processSecondPage(Result result, Element productNameAndPromotionTag) throws IOException {
 		Elements nutitionTable = jSoupClient.scrapeSiteForSpecifiedElementsClass(
 				productNameAndPromotionTag.attr(HREF_TAG).replace(INVALID_PATH_URL, VALID_PATH_URL),
 				MAIN_PRODUCT_INFO_CLASS_ID);
@@ -163,8 +165,7 @@ public class SiteScraperService {
 				&& nutritionRow.select(TD_CONTAINS_KCAL).first().hasText()) {
 			result.setKcalPer100g(
 					Integer.parseInt(nutritionRow.select(TD_CONTAINS_KCAL).first().text().replace(KCAL, EMPTY_STRING)));
-		} 
-
+		}
 
 		Elements productTexts = nutritionRow.getElementsByClass(PRODUCT_TEXT_CLASS_ID);
 		result.setDescription(extractElementsText(productTexts, PARAGRAPH));
@@ -198,7 +199,7 @@ public class SiteScraperService {
 	 */
 	private String extractElementsText(Elements elements, String elementToSelect) {
 		StringBuilder result = new StringBuilder();
-		if (!CollectionUtils.isEmpty(elements)) {
+		if (null != elements && !elements.isEmpty()) {
 			Element element = elements.first();
 			Elements selectedElements = element.select(elementToSelect);
 			result.append(selectedElements.first().text());

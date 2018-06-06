@@ -22,6 +22,12 @@ import com.ctrotter.sainsbury.service.client.JSoupClient;
 @RunWith(MockitoJUnitRunner.class)
 public class SiteScraperServiceTest {
 
+	private static final String DESCRIPTION = "This is a description";
+
+	private static final String HREF = "href";
+
+	private static final String TD_CONTAINS_KCAL = "TD:contains(kcal)";
+
 	private static final String TEST_CALORIES = "100kcal";
 
 	private static final String PRICE_PER_UNIT = "1.00/unit";
@@ -42,12 +48,21 @@ public class SiteScraperServiceTest {
 
 	private static final String PRODUCT_CLASS_ID = "product";
 
+	private static final String TH_CONTAINS_KCAL = "TH:contains(kcal)";
+	
+	private static final String PARAGRAPH = "p";
+
+
+
 
 	@Mock
 	private JSoupClient jSoupClient;
 
 	@Mock
-	private Element priceElement,element, productAndPromationElement, nutritionElement, priceElementParagraph;
+	private Element priceElement,element, productAndPromationElement, nutritionElement, priceElementParagraph,paragraphElement;
+	
+	@Mock
+	private Elements mockParagraphElements;
 
 	@InjectMocks
 	private SiteScraperService siteScraperService = new SiteScraperService();
@@ -76,20 +91,26 @@ public class SiteScraperServiceTest {
 		priceElements.add(priceElement);
 		priceElementParagraphElements.add(priceElementParagraph);
 		when(element.getElementsByClass(PRODUCT_NAME_AND_PROMOTIONS_CLASS_ID)).thenReturn(elements);
-		when(element.getElementsByClass(PRODUCT_NAME_AND_PROMOTIONS_CLASS_ID)).thenReturn(elements);
 		when(element.getElementsByClass(PRICE_PER_UNIT_CLASS_ID)).thenReturn(elements);
 		when(element.getElementsByTag(A_TAG)).thenReturn(elements);
 		when(element.text()).thenReturn(ELEMENT_TEXT);
 		when(element.hasText()).thenReturn(Boolean.TRUE);
 		when(element.getElementsByClass(PRICE_PER_UNIT_CLASS_ID)).thenReturn(priceElements);
-		when(priceElement.text()).thenReturn(PRICE_PER_UNIT);
-		when(element.attr("href")).thenReturn(INVALID_PATH_URL + "/url");
+		when(element.attr(HREF)).thenReturn(INVALID_PATH_URL + "/url");
 		when(element.getElementsByClass(NUTRITION_LEVEL_CLASSS_ID)).thenReturn(nutritionElements);
+		when(element.getElementsByClass(PRODUCT_TEXT_CLASS_ID)).thenReturn(priceElements);
+		when(element.getElementsByClass(PRODUCT_NAME_AND_PROMOTIONS_CLASS_ID)).thenReturn(elements);
+		when(priceElement.text()).thenReturn(PRICE_PER_UNIT);
+		Elements paragraphElements = new Elements();
+		paragraphElements.add(paragraphElement);
+		when(paragraphElement.text()).thenReturn(DESCRIPTION);
+		when(priceElement.select((PARAGRAPH))).thenReturn(paragraphElements );
 		when(nutritionElement.getElementsByClass(NUTRITION_LEVEL_CLASSS_ID)).thenReturn(elements);
 		when(nutritionElement.hasText()).thenReturn(Boolean.TRUE);
 		when(nutritionElement.text()).thenReturn(TEST_CALORIES);
 		when(nutritionElement.getElementsByClass(PRODUCT_TEXT_CLASS_ID)).thenReturn(priceElements);
-		when(element.select("TD:contains(kcal)")).thenReturn(nutritionElements);
+
+		when(element.select(TD_CONTAINS_KCAL)).thenReturn(nutritionElements);
 		when(jSoupClient.scrapeSiteForSpecifiedElementsClass(anyString(), anyString())).thenReturn(elements);
 		// Excecute
 		ScrapedData scrapedData = siteScraperService.scrapeScrape("VALID_URL");
@@ -98,6 +119,8 @@ public class SiteScraperServiceTest {
 		Assert.assertTrue(scrapedData.getResults().size() == 1);
 		Assert.assertTrue(scrapedData.getResults().get(0).getKcalPer100g() == 100);
 		Assert.assertTrue(scrapedData.getResults().get(0).getUnitPrice().compareTo(new BigDecimal(1.00)) == 0);
+		Assert.assertTrue(scrapedData.getResults().get(0).getTitle().equals(ELEMENT_TEXT));
+		Assert.assertTrue(scrapedData.getResults().get(0).getDescription().equals(DESCRIPTION));
 		Assert.assertTrue(scrapedData.getTotal().getGross().compareTo(new BigDecimal(1.00)) == 0);
 		Assert.assertTrue(
 				scrapedData.getTotal().getVat().compareTo(new BigDecimal(0.20).setScale(2, RoundingMode.DOWN)) == 0);
@@ -115,20 +138,20 @@ public class SiteScraperServiceTest {
 		priceElements.add(priceElement);
 		priceElementParagraphElements.add(priceElementParagraph);
 		when(element.getElementsByClass(PRODUCT_NAME_AND_PROMOTIONS_CLASS_ID)).thenReturn(elements);
-		when(element.getElementsByClass(PRODUCT_NAME_AND_PROMOTIONS_CLASS_ID)).thenReturn(elements);
 		when(element.getElementsByClass(PRICE_PER_UNIT_CLASS_ID)).thenReturn(elements);
 		when(element.getElementsByTag(A_TAG)).thenReturn(elements);
 		when(element.text()).thenReturn(ELEMENT_TEXT);
 		when(element.hasText()).thenReturn(Boolean.FALSE);
+		when(element.select(PARAGRAPH)).thenReturn(mockParagraphElements);
 		when(element.getElementsByClass(PRICE_PER_UNIT_CLASS_ID)).thenReturn(priceElements);
-		when(priceElement.text()).thenReturn(PRICE_PER_UNIT);
-		when(element.attr("href")).thenReturn(INVALID_PATH_URL + "/url");
+		when(element.attr(HREF)).thenReturn(INVALID_PATH_URL + "/url");
 		when(element.getElementsByClass(NUTRITION_LEVEL_CLASSS_ID)).thenReturn(nutritionElements);
+		when(priceElement.text()).thenReturn(PRICE_PER_UNIT);
 		when(nutritionElement.getElementsByClass(NUTRITION_LEVEL_CLASSS_ID)).thenReturn(elements);
 		when(nutritionElement.hasText()).thenReturn(Boolean.FALSE);
 		when(nutritionElement.text()).thenReturn(TEST_CALORIES);
-		when(nutritionElement.getElementsByClass(PRODUCT_TEXT_CLASS_ID)).thenReturn(priceElements);
-		when(element.select("TD:contains(kcal)")).thenReturn(nutritionElements);
+		when(nutritionElement.getElementsByClass(PRODUCT_TEXT_CLASS_ID)).thenReturn(elements);
+		when(element.select(TD_CONTAINS_KCAL)).thenReturn(nutritionElements);
 		when(jSoupClient.scrapeSiteForSpecifiedElementsClass(anyString(), anyString())).thenReturn(elements);
 		// Excecute
 		ScrapedData scrapedData = siteScraperService.scrapeScrape("VALID_URL");
@@ -154,21 +177,22 @@ public class SiteScraperServiceTest {
 		priceElements.add(priceElement);
 		priceElementParagraphElements.add(priceElementParagraph);
 		when(element.getElementsByClass(PRODUCT_NAME_AND_PROMOTIONS_CLASS_ID)).thenReturn(elements);
-		when(element.getElementsByClass(PRODUCT_NAME_AND_PROMOTIONS_CLASS_ID)).thenReturn(elements);
 		when(element.getElementsByClass(PRICE_PER_UNIT_CLASS_ID)).thenReturn(elements);
 		when(element.getElementsByTag(A_TAG)).thenReturn(elements);
 		when(element.text()).thenReturn(ELEMENT_TEXT);
 		when(element.hasText()).thenReturn(Boolean.FALSE);
+		when(element.attr(HREF)).thenReturn(INVALID_PATH_URL + "/url");
+		when(element.getElementsByClass(NUTRITION_LEVEL_CLASSS_ID)).thenReturn(nutritionElements);
 		when(element.getElementsByClass(PRICE_PER_UNIT_CLASS_ID)).thenReturn(priceElements);
 		when(priceElement.text()).thenReturn(PRICE_PER_UNIT);
-		when(element.attr("href")).thenReturn(INVALID_PATH_URL + "/url");
-		when(element.getElementsByClass(NUTRITION_LEVEL_CLASSS_ID)).thenReturn(nutritionElements);
-		when(nutritionElement.getElementsByClass(NUTRITION_LEVEL_CLASSS_ID)).thenReturn(elements);
+				when(nutritionElement.getElementsByClass(NUTRITION_LEVEL_CLASSS_ID)).thenReturn(elements);
 		when(nutritionElement.hasText()).thenReturn(Boolean.FALSE);
 		when(nutritionElement.text()).thenReturn(TEST_CALORIES);
 		when(nutritionElement.getElementsByClass(PRODUCT_TEXT_CLASS_ID)).thenReturn(priceElements);
-		when(element.select("TD:contains(kcal)")).thenReturn(nutritionElements);
-		
+		when(element.select(TH_CONTAINS_KCAL)).thenReturn(nutritionElements);
+		when(element.select(TD_CONTAINS_KCAL)).thenReturn(nutritionElements);
+		nutritionElements.parents().addAll(elements);
+		when(element.getElementsByTag("TD")).thenReturn(nutritionElements);
 		when(jSoupClient.scrapeSiteForSpecifiedElementsClass(anyString(), anyString())).thenReturn(elements);
 		// Excecute
 		ScrapedData scrapedData = siteScraperService.scrapeScrape("VALID_URL");
