@@ -27,3 +27,4 @@ Other Notes.
 Due the tight timescales I have omitted to add logging and I would normally not return a json string to the console directly. 
 This should ideally be wrapped with a wrapper class so that exceptions can also be handled easily, and returned in the json response.  
   
+I would also refactor the tests, and add in additional test to ensure that other criteria is tested fully.

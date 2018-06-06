@@ -27,7 +27,7 @@ public class Application implements CommandLineRunner {
 
 	/**
 	 * Main method for spring boot application allowing for fat jar to run correctly. 
-	 * Disables console and web app from starting. 
+	 * Disables console message and embedded web server from starting. 
 	 * @param args
 	 */
     public static void main(String[] args) {
